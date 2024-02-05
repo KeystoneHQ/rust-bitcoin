@@ -489,7 +489,7 @@ fn bip371_psbt_workflow() {
             match key_request {
                 KeyRequest::Bip32((mfp, _)) => {
                     if mfp == self.mfp {
-                        Ok(Some(self.sk.clone()))
+                        Ok(Some(self.sk))
                     } else {
                         Err(SignError::KeyNotFound)
                     }
@@ -501,7 +501,7 @@ fn bip371_psbt_workflow() {
 
     let secp = &Secp256k1::<secp256k1::All>::gen_new();
 
-    let sk_path = vec![
+    let sk_path = [
         ("dff1c8c2c016a572914b4c5adb8791d62b4768ae9d0a61be8ab94cf5038d7d90", "m/86'/1'/0'/0/0"),
         ("1ede31b0e7e47c2afc65ffd158b1b1b9d3b752bba8fd117dc8b9e944a390e8d9", "m/86'/1'/0'/0/1"),
         ("1fb777f1a6fb9b76724551f8bc8ad91b77f33b8c456d65d746035391d724922a", "m/86'/1'/0'/0/2"),
@@ -527,7 +527,7 @@ fn bip371_psbt_workflow() {
     // use public key of path "m/86'/1'/0'/0/2" as internal key
     let internal_key = priv_to_x_only_pub(secp, sk);
 
-    let tree = create_taproot_tree(secp, script1.clone(), script2.clone(), script3.clone(), internal_key.clone());
+    let tree = create_taproot_tree(secp, script1.clone(), script2.clone(), script3.clone(), internal_key);
 
     let address = create_p2tr_address(tree.clone());
     assert_eq!("tb1pytee2mxz0f4fkrsqqws2lsgnkp8nrw2atjkjy2n9gahggsphr0gszaxxmv", address.to_string());
@@ -633,7 +633,7 @@ fn create_taproot_tree(secp: &Secp256k1::<secp256k1::All>, script1: ScriptBuf, s
     let builder = builder.add_leaf(2, script1).unwrap();
     let builder = builder.add_leaf(2, script2).unwrap();
     let builder = builder.add_leaf(1, script3).unwrap();
-    builder.finalize(&secp, internal_key).unwrap()
+    builder.finalize(secp, internal_key).unwrap()
 }
 
 fn create_p2tr_address(tree: TaprootSpendInfo) -> Address {
@@ -669,7 +669,7 @@ fn create_psbt_for_taproot_key_path_spend(from_address: Address, to_address: Add
 
     let mut origins = BTreeMap::new();
     origins.insert(
-        tree.internal_key().clone(),
+        tree.internal_key(),
         (
             vec![],
             (
@@ -690,7 +690,7 @@ fn create_psbt_for_taproot_key_path_spend(from_address: Address, to_address: Add
     };
     let ty = PsbtSighashType::from_str("SIGHASH_DEFAULT").unwrap();
     input.sighash_type = Some(ty);
-    input.tap_internal_key = Some(tree.internal_key().clone());
+    input.tap_internal_key = Some(tree.internal_key());
     input.tap_merkle_root = tree.merkle_root();
     psbt.inputs = vec![input];
     psbt

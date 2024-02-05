@@ -411,14 +411,14 @@ impl Psbt {
 
         for (xpk, (leaf_hashes, key_source)) in input.tap_key_origins.iter() {
             let (sk, x_only_pubkey) = if let Ok(Some(sk)) = k.get_key(KeyRequest::Bip32(key_source.clone()), secp) {
-                (sk, xpk.clone())
+                (sk, *xpk)
             } else {
                 continue;
             };
 
             //key path spend
             if let Some(internal_key) = input.tap_internal_key {
-                if internal_key == x_only_pubkey && leaf_hashes.len() == 0 &&input.tap_key_sig.is_none() {
+                if internal_key == x_only_pubkey && leaf_hashes.is_empty() && input.tap_key_sig.is_none() {
                     let msg_sighash_ty_res = self.sighash_taproot(input_index, cache, None);
                     let (msg, sighash_ty) = match msg_sighash_ty_res {
                         Err(e) => return Err(e),
