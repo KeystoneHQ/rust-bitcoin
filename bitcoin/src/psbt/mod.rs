@@ -419,14 +419,8 @@ impl Psbt {
             //key path spend
             if let Some(internal_key) = input.tap_internal_key {
                 if internal_key == x_only_pubkey && leaf_hashes.is_empty() && input.tap_key_sig.is_none() {
-                    let msg_sighash_ty_res = self.sighash_taproot(input_index, cache, None);
-                    let (msg, sighash_ty) = match msg_sighash_ty_res {
-                        Err(e) => return Err(e),
-                        Ok((msg, sighash_ty)) => (msg, sighash_ty),
-                    };
-
+                    let (msg, sighash_ty) = self.sighash_taproot(input_index, cache, None)?;
                     let secp_for_tweak = &Secp256k1::<secp256k1::All>::gen_new();
-
                     let key_pair = Keypair::from_secret_key(secp_for_tweak, &sk.inner)
                         .tap_tweak(secp_for_tweak, input.tap_merkle_root)
                         .to_inner();
@@ -448,11 +442,7 @@ impl Psbt {
                     .collect::<Vec<_>>();
 
                 for lh in leaf_hashes {
-                    let msg_sighash_ty_res = self.sighash_taproot(input_index, cache, Some(lh));
-                    let (msg, sighash_ty) = match msg_sighash_ty_res {
-                        Err(e) => return Err(e),
-                        Ok((msg, sighash_ty)) => (msg, sighash_ty),
-                    };
+                    let (msg, sighash_ty) = self.sighash_taproot(input_index, cache, Some(lh))?;
                     let key_pair = Keypair::from_secret_key(secp, &sk.inner);
                     let final_signature = taproot::Signature { sig: secp.sign_schnorr_no_aux_rand(&msg, &key_pair), hash_ty: sighash_ty };
                     input
