@@ -392,6 +392,13 @@ impl Psbt {
         Ok(used)
     }
 
+    /// Attempts to create all signatures required by this PSBT's `tap_key_origins` field, adding
+    /// them to `tap_key_sig` or `tap_script_sigs`.
+    ///
+    /// # Returns
+    ///
+    /// - Ok: A list of the public keys used in signing.
+    /// - Err: Error encountered trying to calculate the sighash AND we had the signing key.
     fn bip32_sign_schnorr<C, K, T>(
         &mut self,
         k: &K,
